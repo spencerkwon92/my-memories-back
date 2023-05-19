@@ -1,18 +1,8 @@
-const express = require('express')
+const express = require('express');
+const router = express.Router();
 
-const router = express.Router()
+router.get('/', (req, res) => {
+  res.send('This is the posts endpoint');
+});
 
-router.post('/',(req,res)=>{
-  res.json({
-    id: 1,
-    content: 'hello',
-  })
-})
-
-router.delete('/',(req,res)=>{
-  res.json({
-    id: 1,
-  })
-})
-
-module.export = router
+module.exports = router;

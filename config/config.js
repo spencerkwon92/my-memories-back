@@ -1,7 +1,10 @@
-{
+const dotenv = require('dotenv');
+
+dotenv.config();
+module.exports ={
   "development": {
     "username": "root",
-    "password": "Dreamswe901!",
+    "password": process.env.DB_PASSWORD,
     "database": "my-memories-back",
     "host": "127.0.0.1",
     "dialect": "mysql"
