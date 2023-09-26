@@ -3,15 +3,14 @@ const bcrypt = require('bcrypt')
 const passport = require('passport')
 
 const {User, Post} = require('../models')
-const {isLoggedIn, isNotLoggedIn} = require('./middlewares')
+const {isLoggedIn, isNotLoggedIn} = require("./middlewares");
 
 const router = express.Router()
 
-router.get('/', async(req, res, next)=>{//Get/user
+//Get/user => 내 정보 가져오기
+router.get('/', async(req, res, next)=>{
   try{
-
     if(req.user){
-
       const fullUserWithoutPassword = await User.findOne({
         where: { id: req.user.id },
         attributes: {
@@ -32,6 +31,7 @@ router.get('/', async(req, res, next)=>{//Get/user
       })
       res.status(200).json(fullUserWithoutPassword);
     }else{
+
       res.status(200).json(null);
     }
   }catch(err){
@@ -40,7 +40,7 @@ router.get('/', async(req, res, next)=>{//Get/user
   }
 })
 
-//post/user/login
+//POST/user/login ==> 로그인하기.
 router.post('/login', isNotLoggedIn, (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) {
@@ -52,6 +52,7 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
     }
     return req.login(user, async (loginErr) => {
       if (loginErr) {
+        console.log('로그인 안됬어요!!!!=======')
         console.error(loginErr);
         return next(loginErr);
       }
@@ -78,9 +79,70 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
   })(req, res, next);
 });
 
+//Get/user/1 => 특정 유저 정보 가져오기.₩
+router.get('/:userId', async (req, res, next)=>{
+  try{
+    const user = await User.findOne({
+      where: {id: parseInt(req.params.userId)},
+      attributes: {
+        exclude: ['password']
+      },
+      include:[
+        {
+          model: Post,
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followings',
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followers',
+          attributes: ['id'],
+        }
+      ]
+    })
+    res.status(200).json(user);
+  }catch(err){
+    console.error(err)
+    next(err)
+  }
+})
 
+//Get/user/followers. ==> There are something wrong with this api, so that it needed to fix.
+router.get('/demo/followers', isLoggedIn, async(req, res, next)=>{
+  try{
+    const user = await User.findOne({where: {id: req.user.id}})
+    if(!user) return res.status(403).send('Not exist user')
+    
+    const followers = await user.getFollowers()
+    res.status(200).json(followers)
+  }catch(err){
+    console.error(err)
+    next(err)
+  }
+})
+
+
+// Get/user/followings. => get the followings info.
+router.get('/followings', isLoggedIn, async(req, res, next)=>{
+  try{
+    const user = await User.findOne({where: {id: req.user.id}})
+    if(!user) return res.status(403).send('Not exist user')
+    
+    const followings = await user.getFollowings()
+    res.status(200).json(followings)
+  }catch(err){
+    console.error(err)
+    next(err)
+  }
+})
+
+// POST/user/logout ==> 로그아웃하기.
 router.post('/logout', isLoggedIn, (req, res) => {
-
+  console.log(isLoggedIn)
   req.logout((err) => {
     if (err) {
       console.log('Error logging out:', err);
@@ -99,6 +161,7 @@ router.post('/logout', isLoggedIn, (req, res) => {
 
 });
 
+//post/user ==> 회원가입하기.
 router.post('/', isNotLoggedIn, async (req, res, next)=>{
   try{
     const isExistUser = await User.findOne({
@@ -123,6 +186,7 @@ router.post('/', isNotLoggedIn, async (req, res, next)=>{
   }
 })
 
+//Patch/user/nickname ==> 닉네임 변경하기.
 router.patch('/nickname', isLoggedIn, async (req, res, next)=>{
   try{
     await User.update({
@@ -138,9 +202,11 @@ router.patch('/nickname', isLoggedIn, async (req, res, next)=>{
   }
 })
 
+// Patch/user/1/follow ==> 팔로우하기.
 router.patch('/:userId/follow', isLoggedIn, async (req, res, next)=>{
   try{
-    const user = await User.findOne({where: {id: req.params.userId}})
+
+    const user = await User.findOne({where: {id: parseInt(req.params.userId,10)}})
     if(!user) return res.status(403).send('Not exist user')
 
     await user.addFollowers(req.user.id)
@@ -152,6 +218,7 @@ router.patch('/:userId/follow', isLoggedIn, async (req, res, next)=>{
   } 
 })
 
+// Delete/user/1/follow ==> 언팔 하기.
 router.delete('/:userId/follow', isLoggedIn, async(req, res, next)=>{
   try{
     const user = await User.findOne({where: {id: req.params.userId}})
@@ -164,32 +231,6 @@ router.delete('/:userId/follow', isLoggedIn, async(req, res, next)=>{
     console.error(err)
     next(err)
   } 
-})
-
-router.get('/followers', isLoggedIn, async(req, res, next)=>{
-  try{
-    const user = await User.findOne({where: {id: req.user.id}})
-    if(!user) return res.status(403).send('Not exist user')
-
-    const followers = await user.getFollowers()
-    res.status(200).json(followers)
-  }catch(err){
-    console.error(err)
-    next(err)
-  }
-})
-
-router.get('/followings', isLoggedIn, async(req, res, next)=>{
-    try{
-    const user = await User.findOne({where: {id: req.user.id}})
-    if(!user) return res.status(403).send('Not exist user')
-    
-    const followings = await user.getFollowings()
-    res.status(200).json(followings)
-  }catch(err){
-    console.error(err)
-    next(err)
-  }
 })
 
 module.exports = router

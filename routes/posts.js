@@ -6,6 +6,7 @@ const { isLoggedIn, isNotLoggedIn } = require("./middlewares");
 
 const router = express.Router();
 
+//This API need to removed.
 router.get("/:id", isLoggedIn, async (req, res, next) => {
   // Get/posts/1
   try {
