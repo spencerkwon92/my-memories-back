@@ -1,11 +1,22 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const passport = require('passport')
+const { Op } = require("sequelize");
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
 
-const {User, Post} = require('../models')
+const {User, Post, Comment, Image} = require('../models')
 const {isLoggedIn, isNotLoggedIn} = require("./middlewares");
 
 const router = express.Router()
+
+try{
+  fs.accessSync("uploadedUserProfilePictures");
+}catch(err){
+  console.error("uploadedUserProfilePictures 폴더가 없으므로 생성합니다.");
+  fs.mkdirSync("uploadedUserProfilePictures");
+}
 
 //Get/user => 내 정보 가져오기
 router.get('/', async(req, res, next)=>{
@@ -14,24 +25,32 @@ router.get('/', async(req, res, next)=>{
       const fullUserWithoutPassword = await User.findOne({
         where: { id: req.user.id },
         attributes: {
-          exclude: ['password']
+          exclude: ["password"],
         },
-        include: [{
-          model: Post,
-          attributes: ['id'],
-        }, {
-          model: User,
-          as: 'Followings',
-          attributes: ['id'],
-        }, {
-          model: User,
-          as: 'Followers',
-          attributes: ['id'],
-        }]
-      })
+        include: [
+          {
+            model: Post,
+            attributes: ["id"],
+          },
+          {
+            model: User,
+            as: "Followings",
+            attributes: ["id"],
+          },
+          {
+            model: User,
+            as: "Followers",
+            attributes: ["id"],
+          },
+          {
+            model: Image,
+            as: "ProfileImage",
+          }
+        ],
+      });
       res.status(200).json(fullUserWithoutPassword);
     }else{
-
+      console.log('비로그인 상태에서 데이터를 불러옵니다.')
       res.status(200).json(null);
     }
   }catch(err){
@@ -52,14 +71,13 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
     }
     return req.login(user, async (loginErr) => {
       if (loginErr) {
-        console.log('로그인 안됬어요!!!!=======')
         console.error(loginErr);
         return next(loginErr);
       }
       const fullUserWithoutPassword = await User.findOne({
         where: { id: user.id },
         attributes: {
-          exclude: ['password']
+          exclude: ['password'], 
         },
         include: [{
           model: Post,
@@ -79,45 +97,23 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
   })(req, res, next);
 });
 
-//Get/user/1 => 특정 유저 정보 가져오기.₩
-router.get('/:userId', async (req, res, next)=>{
-  try{
-    const user = await User.findOne({
-      where: {id: parseInt(req.params.userId)},
-      attributes: {
-        exclude: ['password']
-      },
-      include:[
-        {
-          model: Post,
-          attributes: ['id'],
-        },
-        {
-          model: User,
-          as: 'Followings',
-          attributes: ['id'],
-        },
-        {
-          model: User,
-          as: 'Followers',
-          attributes: ['id'],
-        }
-      ]
-    })
-    res.status(200).json(user);
-  }catch(err){
-    console.error(err)
-    next(err)
-  }
-})
-
 //Get/user/followers. ==> There are something wrong with this api, so that it needed to fix.
 router.get('/demo/followers', isLoggedIn, async(req, res, next)=>{
   try{
     const user = await User.findOne({where: {id: req.user.id}})
     if(!user) return res.status(403).send('Not exist user')
     
-    const followers = await user.getFollowers()
+    const followers = await user.getFollowers({
+      attributes: {
+        exclude: ['password']
+      },
+      include: [
+        {
+          model: Image,
+          as: 'ProfileImage',
+        }
+      ]
+    })
     res.status(200).json(followers)
   }catch(err){
     console.error(err)
@@ -125,14 +121,23 @@ router.get('/demo/followers', isLoggedIn, async(req, res, next)=>{
   }
 })
 
-
-// Get/user/followings. => get the followings info.
-router.get('/followings', isLoggedIn, async(req, res, next)=>{
+// Get/user/followings. ==> There are something wrong with this api, so that it needed to fix.
+router.get('/demo/followings', isLoggedIn, async(req, res, next)=>{
   try{
     const user = await User.findOne({where: {id: req.user.id}})
     if(!user) return res.status(403).send('Not exist user')
     
-    const followings = await user.getFollowings()
+    const followings = await user.getFollowings({
+      attributes: {
+        exclude: ['password']
+      },
+      include:[
+        {
+          model: Image,
+          as: 'ProfileImage',
+        }
+      ]
+    })
     res.status(200).json(followings)
   }catch(err){
     console.error(err)
@@ -202,6 +207,90 @@ router.patch('/nickname', isLoggedIn, async (req, res, next)=>{
   }
 })
 
+//multer setting.
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, done) {
+      done(null, "uploadedUserProfilePictures");
+    },
+    filename(req, file, done) {
+      const ext = path.extname(file.originalname);
+      const basename = path.basename(file.originalname, ext);
+      done(null, basename + "_" + new Date().getTime() + ext);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 },
+});
+
+router.patch("/profileImage", isLoggedIn, upload.none(), async (req, res, next) => {
+  try {
+    const user = await User.findOne({
+      where: {id: req.user.id},
+      include: [
+        {
+          model: Image,
+          as: 'ProfileImage',
+        }
+      ]
+    })
+
+    const image = await Image.upsert({
+      src: req.body.profileImage,
+      UserId: req.user.id,
+    },{
+      returning: true,
+    })
+
+    await user.setProfileImage(image[0])
+
+    res.status(200).json(image[0])
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+});
+
+router.post('/profileImage', isLoggedIn, upload.single('profileImage'), async(req,res, next)=>{
+  console.log(req.file);
+  res.json(req.file.filename);
+})
+
+//Get/user/1 => 특정 유저 정보 가져오기.₩
+router.get('/:userId', async (req, res, next)=>{
+  try{
+    const user = await User.findOne({
+      where: {id: parseInt(req.params.userId)},
+      attributes: {
+        exclude: ['password']
+      },
+      include:[
+        {
+          model: Post,
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followings',
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followers',
+          attributes: ['id'],
+        },
+        {
+          model: Image,
+          as: 'ProfileImage',
+        }
+      ]
+    })
+    res.status(200).json(user);
+  }catch(err){
+    console.error(err)
+    next(err)
+  }
+})
+
 // Patch/user/1/follow ==> 팔로우하기.
 router.patch('/:userId/follow', isLoggedIn, async (req, res, next)=>{
   try{
@@ -231,6 +320,70 @@ router.delete('/:userId/follow', isLoggedIn, async(req, res, next)=>{
     console.error(err)
     next(err)
   } 
+})
+
+//GET/user/1/posts ==> 특정 유저의 게시글 가져오기.
+router.get('/:userId/posts', async(req, res, next)=>{
+  const user = await User.findOne({where: {id: req.params.userId}});
+  try{
+    if (user) {
+      const where = {};
+      if (parseInt(req.query.lastId, 10)) {
+        where.id = { [Op.lt]: parseInt(req.query.lastId, 10) };
+      }
+
+      const posts = await user.getPosts({
+        where,
+        limit: 10,
+        order: [
+          ["createdAt", "DESC"],
+          [Comment, "createdAt", "DESC"],
+        ],
+        include: [
+          {
+            model: User,
+            attributes: ["id", "nickname"],
+            include:[
+              {
+                model: Image,
+                as: "ProfileImage",
+              }
+            ]
+          },
+          {
+            model: User,
+            through: "Like",
+            as: "Likers",
+            attributes: ["id"],
+          },
+          {
+            model: Comment,
+            include: [
+              {
+                model: User,
+                attributes: ["id", "nickname"],
+                include:[
+                  {
+                    model: Image,
+                    as: "ProfileImage",
+                  }
+                ]
+              },
+            ],
+          },
+          {
+            model: Image,
+          },
+        ],
+      });
+      console.log(posts), res.status(200).json(posts);
+    } else {
+      res.state(404).send("Not exist user");
+    }
+  }catch(err){
+    console.error(err)
+    next(err)
+  }
 })
 
 module.exports = router

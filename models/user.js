@@ -8,7 +8,7 @@ module.exports = class User extends Model {
       email: {
         type: DataTypes.STRING(30), // STRING, TEXT, BOOLEAN, INTEGER, FLOAT, DATETIME
         allowNull: false, // 필수
-        unique: true, // 고유한 값
+        unique: true,
       },
       nickname: {
         type: DataTypes.STRING(30),
@@ -29,6 +29,7 @@ module.exports = class User extends Model {
   static associate(db) {
     db.User.hasMany(db.Post); //one-to-many
     db.User.hasMany(db.Comment);
+    db.User.hasOne(db.Image, {as: 'ProfileImage', foreignKey: 'UserId'});
     db.User.belongsToMany(db.Post, { through: 'Like', as: 'Liked' })
     db.User.belongsToMany(db.User, { through: 'Follow', as: 'Followers', foreignKey: 'FollowingId' });
     db.User.belongsToMany(db.User, { through: 'Follow', as: 'Followings', foreignKey: 'FollowerId' });

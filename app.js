@@ -10,6 +10,7 @@ const path = require("path");
 const postsRouter = require("./routes/posts");
 const postRouter = require("./routes/post");
 const userRouter = require("./routes/user");
+const hashtagRouter = require("./routes/hashtag");
 const db = require("./models");
 const passportConfig = require("./passport");
 
@@ -32,6 +33,7 @@ app.use(
   })
 );
 app.use("/", express.static(path.join(__dirname, "uploadedPictures")));
+app.use("/", express.static(path.join(__dirname, "uploadedUserProfilePictures")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
@@ -48,6 +50,7 @@ app.use(passport.session());
 app.use("/posts", postsRouter);
 app.use("/post", postRouter); 
 app.use("/user", userRouter);
+app.use("/hashtag", hashtagRouter);
 
 app.listen(3065, () => {
   console.log("server is running");

@@ -1,40 +1,56 @@
 const express = require("express");
 const { Op } = require("sequelize");
-const { Post, Comment, Image, User } = require("../models");
 
-const { isLoggedIn, isNotLoggedIn } = require("./middlewares");
+const { User, Hashtag, Image, Post, Comment } = require("../models");
 
 const router = express.Router();
 
-// Get/posts
-router.get("/", async (req, res, next) => {
+router.get("/:tag", async (req, res, next) => {
   try {
-    // 모든 데이트를 가져오는 경우, 얼만큼 페이지에 렌더링 해줄지 고려해야함.
     const where = {};
     if (parseInt(req.query.lastId, 10)) {
+      // 초기 로딩이 아닐 때
       where.id = { [Op.lt]: parseInt(req.query.lastId, 10) };
-    }
-
+    } // 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
     const posts = await Post.findAll({
       where,
       limit: 10,
-      order: [
-        ["createdAt", "DESC"],
-        [Comment, "createdAt", "DESC"],
-      ],
       include: [
+        {
+          model: Hashtag,
+          where: { name: decodeURIComponent(req.params.tag) },
+        },
         {
           model: User,
           attributes: ["id", "nickname"],
           include:[
-            {
-              model: Image,
-              as: "ProfileImage",
-            }
+             {
+                model: Image,
+                as: "ProfileImage",
+             }
           ]
         },
         {
           model: Image,
+        },
+        {
+          model: User,
+          through: "Like",
+          as: "Likers",
+          attributes: ["id"],
+        },
+        {
+          model: Post,
+          as: "Retweet",
+          include: [
+            {
+              model: User,
+              attributes: ["id", "nickname"],
+            },
+            {
+              model: Image,
+            },
+          ],
         },
         {
           model: Comment,
@@ -48,13 +64,8 @@ router.get("/", async (req, res, next) => {
                   as: "ProfileImage",
                 }
               ]
-            }
+            },
           ],
-        },
-        {
-          model: User,
-          as: "Likers",
-          attributes: ["id"],
         },
       ],
     });

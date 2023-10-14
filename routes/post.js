@@ -35,6 +35,12 @@ router.post("/:postId/comment", isLoggedIn, async (req, res, next) => {
         {
           model: User,
           attributes: ["id", "nickname"],
+          include: [
+            {
+              model: Image,
+              as: "ProfileImage",
+            },
+          ],
         },
       ],
     });
@@ -75,10 +81,10 @@ router.post("/", isLoggedIn, upload.none(), async (req, res, next) => {
             where: { name: tag.slice(1).toLowerCase() },
           })
         )
-      ); // [[노드, true], [리액트, true]]
+      );
       await post.addHashtags(result.map((v) => v[0]));
     }
-
+    //이미지를 Image 모델에 넣어주기... 그리고 그것을  포스트에 넣어주기.
     if (req.body.image) {
       if (Array.isArray(req.body.image)) {
         const images = await Promise.all(
@@ -104,12 +110,24 @@ router.post("/", isLoggedIn, upload.none(), async (req, res, next) => {
             {
               model: User,
               attributes: ["id", "nickname"],
+              include: [
+                {
+                  model: Image,
+                  as: "ProfileImage",
+                },
+              ],
             },
           ],
         },
         {
           model: User,
           attributes: ["id", "nickname"],
+          include: [
+            {
+              model: Image,
+              as: "ProfileImage",
+            },
+          ],
         },
         {
           model: User,
@@ -139,6 +157,37 @@ router.patch("/:postId/like", async (req, res, next) => {
     next(error);
   }
 });
+
+//still working on it.
+router.patch("/:postId/content", isLoggedIn, async(req,res,next)=>{
+  const hashTags = req.body.content.match(/#[^\s#]+/g);
+  try{
+    await Post.update({
+      content: req.body.content,
+    },{
+        where: {
+          id: req.params.postId,
+          UserId: req.user.id,
+        }
+    })
+    const post = await Post.findOne({where: {id: req.params.postId}})
+    if (hashTags) {
+      const result = await Promise.all(
+        hashTags.map((tag) =>
+          Hashtag.findOrCreate({
+            where: { name: tag.slice(1).toLowerCase() },
+          })
+        )
+      );
+      await post.setHashtags(result.map((v) => v[0]));
+    }
+
+    res.status(200).json({PostId: parseInt(req.params.postId, 10), content: req.body.content})
+  }catch(err){
+    console.error(err);
+    next(err)
+  }
+})
 
 router.delete("/:postId/like", async (req, res, next) => {
   // DELETE /post/9
@@ -171,13 +220,9 @@ router.delete("/:postId", async (req, res, next) => {
   }
 });
 
-router.post(
-  "/images",
-  isLoggedIn,
-  upload.array("image"),
-  async (req, res, next) => {
+router.post("/images", isLoggedIn, upload.array("image"), async (req, res, next) => {
     console.log(req.files);
-    res.json(req.files.map((v) => v.filename));
+    res.json(req.files.map((file) => file.filename));
   }
 );
 

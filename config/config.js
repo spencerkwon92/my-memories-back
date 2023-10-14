@@ -8,6 +8,7 @@ module.exports = {
     database: "my-memories-back",
     host: "127.0.0.1",
     dialect: "mysql",
+    migrationPath: "../migrations/",
   },
   test: {
     username: "root",
@@ -15,6 +16,7 @@ module.exports = {
     database: "my-memories-back",
     host: "127.0.0.1",
     dialect: "mysql",
+    migrationPath: "../migrations/",
   },
   production: {
     username: "root",
@@ -22,5 +24,6 @@ module.exports = {
     database: "my-memories-back",
     host: "127.0.0.1",
     dialect: "mysql",
+    migrationPath: "../migrations/",
   },
 };
