@@ -2,3 +2,5 @@ node_modules
 uploadedPictures
 .env
 migrations
+.next
+*.pem
