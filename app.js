@@ -38,7 +38,11 @@ if(process.env.NODE_ENV === "production"){
 //middlewares...
 app.use(
   cors({
-    origin: ["http://localhost:3000", 'mymemories.com'],
+    origin: [
+      "http://localhost:3000",
+      "mymemories.com",
+      "http://15.164.228.221",
+    ],
     credentials: true,
   })
 );
@@ -63,6 +67,7 @@ app.use("/user", userRouter);
 app.use("/hashtag", hashtagRouter);
 app.use("/comment", commentRouter);
 
-app.listen(3065, () => {
+//I allowed port 80 in the case of http
+app.listen(80, () => {
   console.log("server is running");
 });
