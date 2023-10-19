@@ -31,20 +31,23 @@ if(process.env.NODE_ENV === "production"){
   app.use(morgan("combined"));
   app.use(hpp());
   app.use(helmet());
+  app.use(
+    cors({
+      origin: ["http://mymemories.kr"],
+      credentials: true,
+    })
+  );
 }else{
   app.use(morgan("dev"));
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
 }
 
 //middlewares...
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "http://mymemories.kr",
-    ],
-    credentials: true,
-  })
-);
 app.use("/", express.static(path.join(__dirname, "uploadedPictures")));
 app.use("/", express.static(path.join(__dirname, "uploadedUserProfilePictures")));
 app.use(express.json());
@@ -55,6 +58,11 @@ app.use(
     saveUninitialized: false,
     resave: false,
     secret: process.env.COOKIE_SECRET,
+    cookie: {
+      httpOnly: true,
+      secure: false,
+      domain: process.env.NODE_ENV === "production" && ".mymemories.kr",
+    }
   })
 );
 app.use(passport.initialize());
