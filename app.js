@@ -40,8 +40,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "mymemories.com",
-      "http://15.164.228.221",
+      "http://mymemories.kr",
     ],
     credentials: true,
   })
