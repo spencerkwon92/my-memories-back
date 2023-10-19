@@ -5,6 +5,8 @@ const { Op } = require("sequelize");
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const multerS3 = require('multer-s3')
+const AWS = require('aws-sdk')
 
 const {User, Post, Comment, Image} = require('../models')
 const {isLoggedIn, isNotLoggedIn} = require("./middlewares");
@@ -207,17 +209,29 @@ router.patch('/nickname', isLoggedIn, async (req, res, next)=>{
   }
 })
 
+AWS.config.update({
+  accessKeyId: process.env.S3_ACCESS_KEY_ID,
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  region: "ap-northeast-2",
+})
 //multer setting.
 const upload = multer({
-  storage: multer.diskStorage({
-    destination(req, file, done) {
-      done(null, "uploadedUserProfilePictures");
-    },
-    filename(req, file, done) {
-      const ext = path.extname(file.originalname);
-      const basename = path.basename(file.originalname, ext);
-      done(null, basename + "_" + new Date().getTime() + ext);
-    },
+  // storage: multer.diskStorage({
+  //   destination(req, file, done) {
+  //     done(null, "uploadedUserProfilePictures");
+  //   },
+  //   filename(req, file, done) {
+  //     const ext = path.extname(file.originalname);
+  //     const basename = path.basename(file.originalname, ext);
+  //     done(null, basename + "_" + new Date().getTime() + ext);
+  //   },
+  // }),
+  storage: multerS3({
+    s3: new AWS.S3(),
+    bucket: "my-memories-s3",
+    key(req, file, cb){
+      cd(null, `userProfileImages/${Date.now()}_${path.basename(file.originalname)}`)
+    }
   }),
   limits: { fileSize: 20 * 1024 * 1024 },
 });
@@ -252,7 +266,7 @@ router.patch("/profileImage", isLoggedIn, upload.none(), async (req, res, next) 
 
 router.post('/profileImage', isLoggedIn, upload.single('profileImage'), async(req,res, next)=>{
   console.log(req.file);
-  res.json(req.file.filename);
+  res.json(req.file.location);
 })
 
 //Get/user/1 => 특정 유저 정보 가져오기.₩
