@@ -213,7 +213,7 @@ AWS.config.update({
   accessKeyId: process.env.S3_ACCESS_KEY_ID,
   secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
   region: "ap-northeast-2",
-})
+});
 //multer setting.
 const upload = multer({
   // storage: multer.diskStorage({
@@ -230,7 +230,7 @@ const upload = multer({
     s3: new AWS.S3(),
     bucket: "my-memories-s3",
     key(req, file, cb){
-      cd(null, `userProfileImages/${Date.now()}_${path.basename(file.originalname)}`)
+      cb(null, `userProfileImages/${Date.now()}_${path.basename(file.originalname)}`)
     }
   }),
   limits: { fileSize: 20 * 1024 * 1024 },
