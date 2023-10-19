@@ -9,7 +9,6 @@ module.exports = class Post extends Model {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      // RetweetId
     }, {
       modelName: 'Post',
       tableName: 'posts',
