@@ -77,6 +77,6 @@ app.use("/hashtag", hashtagRouter);
 app.use("/comment", commentRouter);
 
 //I allowed port 80 in the case of http
-app.listen(80, () => {
+app.listen(3065, () => {
   console.log("server is running");
 });
