@@ -27,6 +27,7 @@ db.sequelize
   .catch(console.error);
 passportConfig();
 
+app.set('trust proxy', 1);
 if(process.env.NODE_ENV === "production"){
   app.use(morgan("combined"));
   app.use(hpp());
@@ -58,9 +59,10 @@ app.use(
     saveUninitialized: false,
     resave: false,
     secret: process.env.COOKIE_SECRET,
+    proxy: process.env.NODE_ENV === "production",
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       domain: process.env.NODE_ENV === "production" && ".mymemories.kr",
     }
   })
