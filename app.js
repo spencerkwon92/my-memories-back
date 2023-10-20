@@ -33,7 +33,7 @@ if(process.env.NODE_ENV === "production"){
   app.use(helmet());
   app.use(
     cors({
-      origin: ["http://mymemories.kr"],
+      origin: ["https://mymemories.kr"],
       credentials: true,
     })
   );
