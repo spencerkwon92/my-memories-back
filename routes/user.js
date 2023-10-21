@@ -267,10 +267,7 @@ router.patch("/profileImage", isLoggedIn, upload.none(), async (req, res, next) 
 router.post('/profileImage', isLoggedIn, upload.single('profileImage'), async(req,res, next)=>{
   console.log(req.file);
   res.json(
-    req.file.location.replace(
-      /\/userProfileImages\//,
-      '/resizedUserProfileImages/'
-    )
+    req.file.location.replace(/\/userProfileImages\//, "/resizedUserImages/")
   );
 })
 
