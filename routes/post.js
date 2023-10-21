@@ -31,7 +31,7 @@ const upload = multer({
       cb(null, `postImages/${Date.now()}_${path.basename(file.originalname)}`)
     }
   }),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
 
 router.post("/", isLoggedIn, upload.none(), async (req, res, next) => {
