@@ -288,7 +288,7 @@ router.post("/images", isLoggedIn, upload.array("image"), async (req, res, next)
     console.log(req.files);
     res.json(
       req.files.map((file) =>
-        file.location.replace(/\postImages\//, '/resizedPostImages/')
+        file.location.replace(/\/postImages\//, '/resizedPostImages/')
       )
     );
   }
