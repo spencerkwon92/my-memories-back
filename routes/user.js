@@ -266,7 +266,12 @@ router.patch("/profileImage", isLoggedIn, upload.none(), async (req, res, next) 
 
 router.post('/profileImage', isLoggedIn, upload.single('profileImage'), async(req,res, next)=>{
   console.log(req.file);
-  res.json(req.file.location);
+  res.json(
+    req.file.location.replace(
+      /\/userProfileImages\//,
+      '/resizedUserProfileImages/'
+    )
+  );
 })
 
 //Get/user/1 => 특정 유저 정보 가져오기.₩
