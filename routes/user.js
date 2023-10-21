@@ -216,16 +216,7 @@ AWS.config.update({
 });
 //multer setting.
 const upload = multer({
-  // storage: multer.diskStorage({
-  //   destination(req, file, done) {
-  //     done(null, "uploadedUserProfilePictures");
-  //   },
-  //   filename(req, file, done) {
-  //     const ext = path.extname(file.originalname);
-  //     const basename = path.basename(file.originalname, ext);
-  //     done(null, basename + "_" + new Date().getTime() + ext);
-  //   },
-  // }),
+
   storage: multerS3({
     s3: new AWS.S3(),
     bucket: "my-memories-s3",
