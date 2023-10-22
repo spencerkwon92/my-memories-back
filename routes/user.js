@@ -99,8 +99,7 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
   })(req, res, next);
 });
 
-//Get/user/followers. ==> There are something wrong with this api, so that it needed to fix.
-router.get('/demo/followers', isLoggedIn, async(req, res, next)=>{
+router.get('/followers', isLoggedIn, async(req, res, next)=>{
   try{
     const user = await User.findOne({where: {id: req.user.id}})
     if(!user) return res.status(403).send('Not exist user')
@@ -123,8 +122,7 @@ router.get('/demo/followers', isLoggedIn, async(req, res, next)=>{
   }
 })
 
-// Get/user/followings. ==> There are something wrong with this api, so that it needed to fix.
-router.get('/demo/followings', isLoggedIn, async(req, res, next)=>{
+router.get('/followings', isLoggedIn, async(req, res, next)=>{
   try{
     const user = await User.findOne({where: {id: req.user.id}})
     if(!user) return res.status(403).send('Not exist user')
@@ -224,7 +222,7 @@ const upload = multer({
       cb(null, `userProfileImages/${Date.now()}_${path.basename(file.originalname)}`)
     }
   }),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 40 * 1024 * 1024 },
 });
 
 router.patch("/profileImage", isLoggedIn, upload.none(), async (req, res, next) => {
