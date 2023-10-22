@@ -222,7 +222,7 @@ const upload = multer({
       cb(null, `userProfileImages/${Date.now()}_${path.basename(file.originalname)}`)
     }
   }),
-  limits: { fileSize: 40 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
 
 router.patch("/profileImage", isLoggedIn, upload.none(), async (req, res, next) => {
